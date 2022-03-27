@@ -22,40 +22,41 @@ void DFA::initDFA(const json &dfaDesc) {
 
     auto statesVec = dfaDesc["states"];
     for(auto state : statesVec) {
+        State newState = {state["name"], state["starting"], state["accepting"]};
+        states[newState.name] = newState;
         if(state["starting"]) {
-            this->startState = state["name"];
+            this->startState = newState;
         }
-        if(state["accepting"]) {
-            this->finalStates.insert((string)state["name"]);
-        }
-
-        states.insert({state["name"], state["starting"], state["accepting"]});
     }
 
     auto transitions = dfaDesc["transitions"];
     for(auto transition : transitions) {
-        string from = transition["from"];
-        string to = transition["to"];
+        State from = states[transition["from"]];
+        State to = states[transition["to"]];
+
         string input = transition["input"];
         if(alphabet.find(input) == alphabet.end())
             cerr << "Inconsistency in DFA description file: input symbol not in alphabet\n";
+
         this->transitionTable[{from, input}] = to;
     }
 
     // TF-algorithm
 
     // Filling the statePairs map
-    for(const auto& s1 : states) {
-        for(const auto& s2 : states) {
+    for(const auto& p1 : states) {
+        State s1 = p1.second;
+        for(const auto& p2 : states) {
+            State s2 = p2.second;
             if(s1.name < s2.name ) {
                 statePairs[{s2,s1}] = false; // Initially not marked
             }
         }
     }
 
-    bool passMarkedState = true; // true if previous pass marked at least one state
-    while(passMarkedState) {
-        passMarkedState = false;
+    bool madeProgress = true; // true if previous pass marked at least one state
+    while(madeProgress) {
+        madeProgress = false;
         for(auto& p : statePairs) {
             if(p.second) continue; // If already marked continue
 
@@ -64,33 +65,31 @@ void DFA::initDFA(const json &dfaDesc) {
             // Basis
             if(statePair.first.accepting != statePair.second.accepting) {
                 p.second = true; // Mark pair
-                passMarkedState = true;
+                madeProgress = true;
+                continue;
             }
 
             //Inductive
             for(const auto& symbol : alphabet) {
-                string firstNext = transitionTable[{statePair.first.name, symbol}];
-                string secondNext = transitionTable[{statePair.second.name, symbol}];
+                State firstNext = transitionTable[{statePair.first, symbol}];
+                State secondNext = transitionTable[{statePair.second, symbol}];
                 if(firstNext == secondNext) continue;
                 // Our statePairs table requires that the first state of the pair
                 // must come later in the alphabet as the second
                 if(firstNext < secondNext) {
-                    string temp = secondNext;
+                    State temp = secondNext;
                     secondNext = firstNext;
                     firstNext = temp;
                 }
-                if(statePairs.at({{firstNext,false,false}, {secondNext, false, false}})) {
+                if(statePairs.at({firstNext, secondNext})) {
                     // Mark this pair of states
                     p.second = true;
-                    passMarkedState = true;
+                    madeProgress = true;
                     break;
                 }
-
             }
         }
     }
-
-
 
     printTable();
 }
@@ -111,7 +110,7 @@ DFA::DFA(const nlohmann::json& dfaDesc, int) {
 
 bool DFA::accepts(const std::string& s) const
 {
-    string currentState = startState;
+    State currentState = startState;
 
     istringstream iss{s};
     for(char c; iss >> c; ) {
@@ -120,7 +119,7 @@ bool DFA::accepts(const std::string& s) const
         currentState = transitionTable.at({currentState, string{c}});
     }
 
-    return finalStates.find(currentState) != finalStates.end();
+    return currentState.accepting;
 }
 
 void DFA::printTable() const
@@ -144,7 +143,7 @@ void DFA::printTable() const
     // Print the bottom row
     cout << "\n \t";
     for(auto it = states.begin(); it != states.end();) {
-        auto s = *it;
+        auto s = (*it).second;
         if(++it == states.end()) break;
         cout << s.name << "\t";
     }
@@ -163,15 +162,16 @@ void DFA::print() const
     vector<json> transitionsDesc;
     for(const auto& t : transitionTable) {
         json stateDesc;
-        string fromName = t.first.first;
+        State from = t.first.first;
+        string fromName = from.name;
         stateDesc["name"] = fromName;
-        stateDesc["starting"] = (fromName == startState);
-        stateDesc["accepting"] = (finalStates.find(fromName) != finalStates.end());
+        stateDesc["starting"] = from.starting;
+        stateDesc["accepting"] = from.accepting;
         statesDesc.insert(stateDesc);
 
         json transitionDesc;
         transitionDesc["from"] = fromName;
-        transitionDesc["to"] = t.second;
+        transitionDesc["to"] = t.second.name;
         transitionDesc["input"] = t.first.second;
         transitionsDesc.push_back(transitionDesc);
     }

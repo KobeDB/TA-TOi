@@ -34,12 +34,11 @@ class DFA {
         return os;
     }
 
-    std::string startState {};
-    std::set<std::string> finalStates {};
-    std::map<std::pair<std::string, std::string>, std::string> transitionTable {};
+    State startState {};
+    std::map<std::pair<State, std::string>, State> transitionTable {};
     std::set<std::string> alphabet {};
 
-    std::set<State> states;
+    std::map<std::string, State> states; // Maps name of state on State object itself
 
     // A sorted map of pairs (sorted by name). bool tells if pair is marked/distinguishable.
     std::map<std::pair<State,State>, bool> statePairs;
