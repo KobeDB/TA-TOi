@@ -11,13 +11,13 @@ using namespace std;
 using json = nlohmann::json;
 
 int main(){
-    DFA dfa("DFA.json");
-    cout << boolalpha << dfa.accepts("0010110100") << endl << dfa.accepts("0001") << endl;
+    DFA dfa("DFA-TF.json");
+    cout << boolalpha << dfa.accepts("aaeeeeaa") << endl << dfa.accepts("aaeeaaea") << endl;
     //dfa.print();
 
 
-    NFA nfa("input-ssc2.json");
-    nfa.toDFA().print();
+    //NFA nfa("input-ssc2.json");
+    //nfa.toDFA().print();
 
     return 0;
 }

@@ -28,6 +28,8 @@ void DFA::initDFA(const json &dfaDesc) {
         if(state["accepting"]) {
             this->finalStates.insert((string)state["name"]);
         }
+
+        states.insert({state["name"], state["starting"], state["accepting"]});
     }
 
     auto transitions = dfaDesc["transitions"];
@@ -39,6 +41,21 @@ void DFA::initDFA(const json &dfaDesc) {
             cerr << "Inconsistency in DFA description file: input symbol not in alphabet\n";
         this->transitionTable[{from, input}] = to;
     }
+
+    // TF-algorithm
+
+    // Filling the statePairs map
+    for(const auto& s1 : states) {
+        for(const auto& s2 : states) {
+            if(s1.name < s2.name ) {
+                statePairs[{s2,s1}] = false; // Initially not marked
+            }
+        }
+    }
+
+
+
+    printTable();
 }
 
 DFA::DFA(const std::string &fileName)
@@ -67,6 +84,34 @@ bool DFA::accepts(const std::string& s) const
     }
 
     return finalStates.find(currentState) != finalStates.end();
+}
+
+void DFA::printTable() const
+{
+    string prevRowName;
+    for(const auto& p : statePairs) {
+        const auto& statePair = p.first;
+        if(prevRowName.empty()) {
+            prevRowName = statePair.first.name;
+            cout << statePair.first.name << "\t";
+        }
+        if(prevRowName < statePair.first.name) {
+            cout << "\n";
+            cout << statePair.first.name << "\t";
+        }
+        //cout << p.first << " | " << std::boolalpha << p.second << "\n";
+        cout << (p.second? 'X' : '-') << "\t";
+
+        prevRowName = statePair.first.name;
+    }
+    // Print the bottom row
+    cout << "\n \t";
+    for(auto it = states.begin(); it != states.end();) {
+        auto s = *it;
+        if(++it == states.end()) break;
+        cout << s.name << "\t";
+    }
+    cout << "\n";
 }
 
 void DFA::print() const
