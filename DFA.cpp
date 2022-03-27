@@ -53,6 +53,43 @@ void DFA::initDFA(const json &dfaDesc) {
         }
     }
 
+    bool passMarkedState = true; // true if previous pass marked at least one state
+    while(passMarkedState) {
+        passMarkedState = false;
+        for(auto& p : statePairs) {
+            if(p.second) continue; // If already marked continue
+
+            auto statePair = p.first;
+
+            // Basis
+            if(statePair.first.accepting != statePair.second.accepting) {
+                p.second = true; // Mark pair
+                passMarkedState = true;
+            }
+
+            //Inductive
+            for(const auto& symbol : alphabet) {
+                string firstNext = transitionTable[{statePair.first.name, symbol}];
+                string secondNext = transitionTable[{statePair.second.name, symbol}];
+                if(firstNext == secondNext) continue;
+                // Our statePairs table requires that the first state of the pair
+                // must come later in the alphabet as the second
+                if(firstNext < secondNext) {
+                    string temp = secondNext;
+                    secondNext = firstNext;
+                    firstNext = temp;
+                }
+                if(statePairs.at({{firstNext,false,false}, {secondNext, false, false}})) {
+                    // Mark this pair of states
+                    p.second = true;
+                    passMarkedState = true;
+                    break;
+                }
+
+            }
+        }
+    }
+
 
 
     printTable();

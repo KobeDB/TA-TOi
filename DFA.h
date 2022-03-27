@@ -20,7 +20,8 @@ class DFA {
         bool accepting;
 
         bool operator==(const State &other) const {
-            return name == other.name && starting == other.starting && accepting == other.accepting;
+            //return name == other.name && starting == other.starting && accepting == other.accepting;
+            return name == other.name;
         }
 
         bool operator<(const State &other) const {
