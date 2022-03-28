@@ -43,6 +43,20 @@ void DFA::initDFA(const json &dfaDesc) {
 
     // TF-algorithm
 
+    statePairs = fillTable(alphabet, states, transitionTable);
+
+    printTable();
+}
+
+// The TF-algorithm
+map<pair<State,State>, bool> /*statePairs*/ fillTable (
+        const set<string>& alphabet,
+        const map<string, State>& states,
+        const map<pair<State, string>, State>& transitionTable
+                )
+{
+    map<pair<State,State>, bool> statePairs;
+
     // Filling the statePairs map
     for(const auto& p1 : states) {
         State s1 = p1.second;
@@ -57,31 +71,31 @@ void DFA::initDFA(const json &dfaDesc) {
     bool madeProgress = true; // true if previous pass marked at least one state
     while(madeProgress) {
         madeProgress = false;
-        for(auto& p : statePairs) {
-            if(p.second) continue; // If already marked continue
+        for (auto &p: statePairs) {
+            if (p.second) continue; // If already marked continue
 
             auto statePair = p.first;
 
             // Basis
-            if(statePair.first.accepting != statePair.second.accepting) {
+            if (statePair.first.accepting != statePair.second.accepting) {
                 p.second = true; // Mark pair
                 madeProgress = true;
                 continue;
             }
 
             //Inductive
-            for(const auto& symbol : alphabet) {
-                State firstNext = transitionTable[{statePair.first, symbol}];
-                State secondNext = transitionTable[{statePair.second, symbol}];
-                if(firstNext == secondNext) continue;
+            for (const auto &symbol: alphabet) {
+                State firstNext = transitionTable.at({statePair.first, symbol});
+                State secondNext = transitionTable.at({statePair.second, symbol});
+                if (firstNext == secondNext) continue;
                 // Our statePairs table requires that the first state of the pair
                 // must come later in the alphabet as the second
-                if(firstNext < secondNext) {
+                if (firstNext < secondNext) {
                     State temp = secondNext;
                     secondNext = firstNext;
                     firstNext = temp;
                 }
-                if(statePairs.at({firstNext, secondNext})) {
+                if (statePairs.at({firstNext, secondNext})) {
                     // Mark this pair of states
                     p.second = true;
                     madeProgress = true;
@@ -91,7 +105,7 @@ void DFA::initDFA(const json &dfaDesc) {
         }
     }
 
-    printTable();
+    return statePairs;
 }
 
 DFA::DFA(const std::string &fileName)

@@ -12,22 +12,22 @@
 
 #include "json.hpp"
 
+struct State {
+    std::string name;
+    bool starting;
+    bool accepting;
+
+    bool operator==(const State &other) const {
+        //return name == other.name && starting == other.starting && accepting == other.accepting;
+        return name == other.name;
+    }
+
+    bool operator<(const State &other) const {
+        return name < other.name;
+    }
+};
+
 class DFA {
-
-    struct State {
-        std::string name;
-        bool starting;
-        bool accepting;
-
-        bool operator==(const State &other) const {
-            //return name == other.name && starting == other.starting && accepting == other.accepting;
-            return name == other.name;
-        }
-
-        bool operator<(const State &other) const {
-            return name < other.name;
-        }
-    };
 
     friend std::ostream& operator<<(std::ostream& os, const std::pair<State,State>& p) {
         os << p.first.name << ", " << p.second.name;
@@ -56,6 +56,13 @@ public:
 
     void printTable() const;
 };
+
+std::map<std::pair<State,State>, bool> /*statePairs*/
+        fillTable(
+                const std::set<std::string>& alphabet,
+                const std::map<std::string, State>& states,
+                const std::map<std::pair<State, std::string>, State>& transitionTable);
+
 
 
 #endif //TA_PRAC_1_DFA_H
