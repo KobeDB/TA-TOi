@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 
 #include <iomanip>
 #include "json.hpp"
@@ -45,7 +46,7 @@ void DFA::initDFA(const json &dfaDesc) {
 
     statePairs = fillTable(alphabet, states, transitionTable);
 
-    printTable();
+    //printTable();
 }
 
 // The TF-algorithm
@@ -136,33 +137,6 @@ bool DFA::accepts(const std::string& s) const
     return currentState.accepting;
 }
 
-void DFA::printTable() const
-{
-    string prevRowName;
-    for(const auto& p : statePairs) {
-        const auto& statePair = p.first;
-        if(prevRowName.empty()) {
-            prevRowName = statePair.first.name;
-            cout << statePair.first.name << "\t";
-        }
-        if(prevRowName < statePair.first.name) {
-            cout << "\n";
-            cout << statePair.first.name << "\t";
-        }
-        //cout << p.first << " | " << std::boolalpha << p.second << "\n";
-        cout << (p.second? 'X' : '-') << "\t";
-
-        prevRowName = statePair.first.name;
-    }
-    // Print the bottom row
-    cout << "\n \t";
-    for(auto it = states.begin(); it != states.end();) {
-        auto s = (*it).second;
-        if(++it == states.end()) break;
-        cout << s.name << "\t";
-    }
-    cout << "\n";
-}
 
 void DFA::print() const
 {
@@ -194,6 +168,157 @@ void DFA::print() const
 
 
     cout << setw(4) << dfaDesc << endl;
+}
+
+struct EquiClass {
+    set<State> equivalents;
+    State representative;
+    EquiClass(const State& representative) : representative{representative}, equivalents{representative} {}
+
+    string toString() const {
+        stringstream ss;
+        ss << "{";
+        bool first = true;
+        for(const auto& state : equivalents) {
+            if(!first) ss << ", ";
+            first = false;
+            ss << state.name;
+        }
+        ss << "}";
+        string result = ss.str();
+        return result;
+    }
+
+    bool isStarting() const {
+        if(equivalents.empty()) cerr << "ERROR: equivalents is empty!\n";
+        return equivalents.begin()->starting;
+    }
+    bool isAccepting() const {
+        if(equivalents.empty()) cerr << "ERROR: equivalents is empty!\n";
+        return equivalents.begin()->accepting;
+    }
+
+    bool operator<(const EquiClass& other) const {return equivalents < other.equivalents;}
+};
+
+EquiClass getEquiClass(const State& s, const set<EquiClass>& equiClasses)
+{
+    for(const auto& equiClass : equiClasses) {
+        if(find(equiClass.equivalents.begin(), equiClass.equivalents.end(), s) == equiClass.equivalents.end()) continue;
+        return equiClass;
+    }
+    cerr << "No getEquiClass for state s\n";
+    return {State{"ERR"}};
+}
+
+DFA DFA::minimize() const {
+    json minDFADesc;
+    minDFADesc["type"] = "DFA";
+    minDFADesc["alphabet"] = alphabet;
+
+    set<EquiClass> equivalenceClasses;
+    for(const auto& s : states) {
+        const auto& state = s.second;
+        EquiClass equivalenceClass{state};
+        for(const auto& p : statePairs) {
+            if(p.second) continue; // If pair is marked continue
+            const auto& statePair = p.first;
+            if(statePair.first.name == state.name) {
+                equivalenceClass.equivalents.insert(statePair.second);
+            }
+            else if(statePair.second.name == state.name) {
+                equivalenceClass.equivalents.insert(statePair.first);
+            }
+            else {
+                continue;
+            }
+        }
+        equivalenceClasses.insert(equivalenceClass);
+    }
+
+    json minimizedTransitions = vector<json>{};
+    for(const auto& t : transitionTable) {
+        const State& from = t.first.first;
+        const State& to = t.second;
+        EquiClass fromEquiClass = getEquiClass(from, equivalenceClasses);
+        if(from != fromEquiClass.representative) continue;
+        json minTransition;
+        minTransition["from"] = fromEquiClass.toString();
+        minTransition["to"] = getEquiClass(to, equivalenceClasses).toString();
+        minTransition["input"] = t.first.second;
+        minimizedTransitions.push_back(minTransition);
+    }
+    minDFADesc["transitions"] = minimizedTransitions;
+//    setbuf(stdout, 0);
+//    cout << setw(4) << minimizedTransitions;
+
+    json minimizedStates = vector<json>{};
+    for(const auto& equiClass : equivalenceClasses) {
+        json minState;
+        minState["name"] = equiClass.toString();
+        minState["starting"] = equiClass.isStarting();
+        minState["accepting"] = equiClass.isAccepting();
+        minimizedStates.push_back(minState);
+    }
+    minDFADesc["states"] = minimizedStates;
+//    setbuf(stdout, 0);
+//    cout << setw(4) << minimizedStates;
+
+    int dummy{};
+    return {minDFADesc, dummy};
+}
+
+bool DFA::operator==(const DFA &other) const
+{
+    if(alphabet != other.alphabet) return false;
+
+    map<string, State> unionOfStates{states};
+    map<pair<State, string>, State> unionOfTransitions{transitionTable};
+    unionOfStates.insert(other.states.begin(), other.states.end());
+    unionOfTransitions.insert(other.transitionTable.begin(), other.transitionTable.end());
+
+    auto TF_table = fillTable(alphabet, unionOfStates, unionOfTransitions);
+    State firstStartState = startState;
+    State secondStartState = other.startState;
+    if(firstStartState < secondStartState) {
+        swap(firstStartState, secondStartState);
+    }
+    ::printTable(unionOfStates, TF_table);
+    return !TF_table.at({firstStartState, secondStartState});
+}
+
+
+
+void printTable(const std::map<std::string, State>& states, const std::map<std::pair<State,State>, bool>& statePairs )
+{
+    string prevRowName;
+    for(const auto& p : statePairs) {
+        const auto& statePair = p.first;
+        if(prevRowName.empty()) {
+            prevRowName = statePair.first.name;
+            cout << statePair.first.name << "\t";
+        }
+        if(prevRowName < statePair.first.name) {
+            cout << "\n";
+            cout << statePair.first.name << "\t";
+        }
+        //cout << p.first << " | " << std::boolalpha << p.second << "\n";
+        cout << (p.second? 'X' : '-') << "\t";
+
+        prevRowName = statePair.first.name;
+    }
+    // Print the bottom row
+    cout << "\n \t";
+    for(auto it = states.begin(); it != states.end();) {
+        auto s = (*it).second;
+        if(++it == states.end()) break;
+        cout << s.name << "\t";
+    }
+    cout << "\n";
+}
+
+void DFA::printTable() const {
+    ::printTable(states, statePairs);
 }
 
 

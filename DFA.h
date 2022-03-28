@@ -18,8 +18,11 @@ struct State {
     bool accepting;
 
     bool operator==(const State &other) const {
-        //return name == other.name && starting == other.starting && accepting == other.accepting;
-        return name == other.name;
+        return name == other.name && starting == other.starting && accepting == other.accepting;
+    }
+
+    bool operator!=(const State& other) const {
+        return !(*this==other);
     }
 
     bool operator<(const State &other) const {
@@ -50,6 +53,10 @@ private:
     void initDFA(const nlohmann::json& jsonDesc);
 public:
 
+    DFA minimize() const;
+
+    bool operator==(const DFA& other) const;
+
     bool accepts(const std::string& s) const;
 
     void print() const;
@@ -63,6 +70,7 @@ std::map<std::pair<State,State>, bool> /*statePairs*/
                 const std::map<std::string, State>& states,
                 const std::map<std::pair<State, std::string>, State>& transitionTable);
 
+void printTable(const std::map<std::string, State>& states, const std::map<std::pair<State,State>, bool>& statePairs );
 
 
 #endif //TA_PRAC_1_DFA_H

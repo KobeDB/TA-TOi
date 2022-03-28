@@ -12,12 +12,10 @@ using json = nlohmann::json;
 
 int main(){
     DFA dfa("DFA-TF.json");
-    cout << boolalpha << dfa.accepts("aaeeeeaa") << endl << dfa.accepts("aaeeaaea") << endl;
-    //dfa.print();
-
-
-    //NFA nfa("input-ssc2.json");
-    //nfa.toDFA().print();
+    DFA mindfa = dfa.minimize();
+    dfa.printTable();
+    //mindfa.print();
+    cout << boolalpha << (dfa == mindfa) << endl;
 
     return 0;
 }
