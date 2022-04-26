@@ -12,39 +12,39 @@
 
 #include "json.hpp"
 
-struct State {
+struct ENFAState {
     std::string name;
     bool starting;
     bool accepting;
 
-    bool operator==(const State &other) const {
+    bool operator==(const ENFAState &other) const {
         return name == other.name && starting == other.starting && accepting == other.accepting;
     }
 
-    bool operator!=(const State& other) const {
+    bool operator!=(const ENFAState& other) const {
         return !(*this==other);
     }
 
-    bool operator<(const State &other) const {
+    bool operator<(const ENFAState &other) const {
         return name < other.name;
     }
 };
 
 class DFA {
 
-    friend std::ostream& operator<<(std::ostream& os, const std::pair<State,State>& p) {
+    friend std::ostream& operator<<(std::ostream& os, const std::pair<ENFAState,ENFAState>& p) {
         os << p.first.name << ", " << p.second.name;
         return os;
     }
 
-    State startState {};
-    std::map<std::pair<State, std::string>, State> transitionTable {};
+    ENFAState startState {};
+    std::map<std::pair<ENFAState, std::string>, ENFAState> transitionTable {};
     std::set<std::string> alphabet {};
 
-    std::map<std::string, State> states; // Maps name of state on State object itself
+    std::map<std::string, ENFAState> states; // Maps name of state on ENFAState object itself
 
     // A sorted map of pairs (sorted by name). bool tells if pair is marked/distinguishable.
-    std::map<std::pair<State,State>, bool> statePairs;
+    std::map<std::pair<ENFAState,ENFAState>, bool> statePairs;
 
 public:
     DFA(const std::string& fileName);
@@ -64,13 +64,13 @@ public:
     void printTable() const;
 };
 
-std::map<std::pair<State,State>, bool> /*statePairs*/
+std::map<std::pair<ENFAState,ENFAState>, bool> /*statePairs*/
         fillTable(
                 const std::set<std::string>& alphabet,
-                const std::map<std::string, State>& states,
-                const std::map<std::pair<State, std::string>, State>& transitionTable);
+                const std::map<std::string, ENFAState>& states,
+                const std::map<std::pair<ENFAState, std::string>, ENFAState>& transitionTable);
 
-void printTable(const std::map<std::string, State>& states, const std::map<std::pair<State,State>, bool>& statePairs );
+void printTable(const std::map<std::string, ENFAState>& states, const std::map<std::pair<ENFAState,ENFAState>, bool>& statePairs );
 
 
 #endif //TA_PRAC_1_DFA_H
