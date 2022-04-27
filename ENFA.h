@@ -10,10 +10,13 @@
 #include <map>
 #include <set>
 
+#include "json.hpp"
+
 class ENFAState {
     bool accepting;
+    std::string name;
     std::map<char, std::set<ENFAState*>> transitions;
-    explicit ENFAState(bool accepting) : accepting{accepting} {}
+    explicit ENFAState(bool accepting, const std::string& name) : accepting{accepting}, name{name}, transitions{} {}
 
     friend class ENFA;
 
@@ -46,6 +49,7 @@ public:
     friend ENFA concat(ENFA&& enfa1, ENFA&& enfa2); // Concatenation
     friend ENFA kleenestar(ENFA&& enfa); // Kleene closure
 
+    nlohmann::json toJson() const;
 };
 
 

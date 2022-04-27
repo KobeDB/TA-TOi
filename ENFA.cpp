@@ -5,8 +5,12 @@
 #include "ENFA.h"
 
 #include <iostream>
+#include <vector>
 
 using namespace std;
+
+int uid;
+int getUid() { uid++; return uid; }
 
 std::vector<ENFAState*> ENFA::getFinalStates() {
     vector<ENFAState*> finalStates;
@@ -18,7 +22,7 @@ std::vector<ENFAState*> ENFA::getFinalStates() {
 }
 
 ENFAState *ENFA::createState(bool accepting) {
-    ENFAState* newState = new ENFAState{accepting};
+    ENFAState* newState = new ENFAState{accepting, to_string(getUid())};
     states.push_back(std::unique_ptr<ENFAState>{newState});
     return newState;
 }
@@ -99,4 +103,38 @@ ENFA kleenestar(ENFA &&enfa) {
 void ENFAState::addTransition(char c, ENFAState *to)
 {
     transitions[c].insert(to);
+}
+
+nlohmann::json ENFA::toJson() const
+{
+    using json = nlohmann::json;
+    json enfaDesc;
+
+    enfaDesc["type"] = "ENFA";
+
+    set<string> alphabet;
+    vector<json> statesDesc;
+    vector<json> transitionsDesc;
+    for(const auto& s : states) {
+        for(const auto& t : s->transitions) {
+            for(const auto& to : t.second) {
+                transitionsDesc.push_back({{"from",s->name},
+                                           {"to", to->name},
+                                           {"input", string{t.first}}});
+            }
+            if(t.first == eps) continue;
+            alphabet.insert(string{t.first});
+        }
+        statesDesc.push_back({
+                {"name", s->name},
+                {"starting", s.get() == startState},
+                {"accepting", s->accepting}}
+                );
+
+    }
+    enfaDesc["alphabet"] = vector<string>{alphabet.begin(),alphabet.end()};
+    enfaDesc["states"] = statesDesc;
+    enfaDesc["transitions"] = transitionsDesc;
+
+    return enfaDesc;
 }
