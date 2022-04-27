@@ -12,7 +12,7 @@ using namespace std;
 using json = nlohmann::json;
 
 int main(){
-    RE re{".ab", 'e'};
+    RE re{"*a", 'e'};
     ENFA enfa = re.toENFA();
     cout << "Hello there\n";
     return 0;

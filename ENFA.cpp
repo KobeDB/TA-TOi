@@ -75,10 +75,25 @@ ENFA kleenestar(ENFA &&enfa) {
 
     starNFA.getStartState()->addTransition(ENFA::eps, enfa.getStartState());
 
+    // Eps-transition from starNFA's startState to the final state
+    auto final = starNFA.createState(true);
+    starNFA.getStartState()->addTransition(ENFA::eps, final);
 
+    // Eps-transition from enfa's final state to the new final state
+    auto enfaFinals = enfa.getFinalStates();
+    if(enfaFinals.size() != 1) cerr << "ERROR: enfa doesnt have exactly one final state!\n";
+    auto enfaFinal = enfaFinals[0];
+    enfaFinal->addTransition(ENFA::eps, final);
 
+    // Eps-transition from enfa's final state to its start state
+    enfaFinal->addTransition(ENFA::eps, enfa.getStartState());
 
-    return ENFA(false);
+    enfaFinal->setAccepting(false);
+
+    // Finally, move ENFAState-ownership from the ENFA to the new starNFA
+    std::move(enfa.states.begin(), enfa.states.end(), std::back_inserter(starNFA.states));
+
+    return starNFA;
 }
 
 void ENFAState::addTransition(char c, ENFAState *to)
