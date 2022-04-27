@@ -5,17 +5,15 @@
 
 #include "DFA.h"
 #include "NFA.h"
+#include "RE.h"
 
 using namespace std;
 
 using json = nlohmann::json;
 
 int main(){
-    DFA dfa("DFA-TF.json");
-    DFA mindfa = dfa.minimize();
-    dfa.printTable();
-    //mindfa.print();
-    cout << boolalpha << (dfa == mindfa) << endl;
-
+    RE re{"+ + a c b", 'e'};
+    ENFA enfa = re.toENFA();
+    cout << "Hello there\n";
     return 0;
 }

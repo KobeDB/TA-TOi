@@ -8,33 +8,41 @@
 #include <memory>
 #include <vector>
 #include <map>
-
-class ENFAState;
-
-class ENFA {
-
-    ENFAState* startState;
-
-    std::vector<std::unique_ptr<ENFAState>> states;
-
-public:
-    ENFA(ENFAState* startState);
-
-    std::vector<ENFAState*> getFinalStates();
-
-    ENFAState* createState(bool accepting);
-
-};
+#include <set>
 
 class ENFAState {
     bool accepting;
-    std::map<char, ENFAState*> transitions;
+    std::map<char, std::set<ENFAState*>> transitions;
     explicit ENFAState(bool accepting) : accepting{accepting} {}
 
     friend class ENFA;
 
 public:
     void addTransition(char c, ENFAState *to);
+    void setAccepting(bool newAccepting) { accepting = newAccepting; }
 };
+
+class ENFA {
+    static const char eps{'~'};
+
+    ENFAState* startState;
+
+    std::vector<std::unique_ptr<ENFAState>> states;
+
+public:
+    explicit ENFA(bool startIsAccepting) : startState{}, states{} {
+        startState = createState(startIsAccepting);
+    }
+
+    ENFAState* getStartState() {return startState;}
+    std::vector<ENFAState*> getFinalStates();
+
+    ENFAState* createState(bool accepting);
+
+    friend ENFA operator+(ENFA&& enfa1, ENFA&& enfa2);
+
+};
+
+
 
 #endif //TA_PRAC_2_ENFA_H

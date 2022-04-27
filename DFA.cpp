@@ -23,7 +23,7 @@ void DFA::initDFA(const json &dfaDesc) {
 
     auto statesVec = dfaDesc["states"];
     for(auto state : statesVec) {
-        ENFAState newState = {state["name"], state["starting"], state["accepting"]};
+        State newState = {state["name"], state["starting"], state["accepting"]};
         states[newState.name] = newState;
         if(state["starting"]) {
             this->startState = newState;
@@ -32,8 +32,8 @@ void DFA::initDFA(const json &dfaDesc) {
 
     auto transitions = dfaDesc["transitions"];
     for(auto transition : transitions) {
-        ENFAState from = states[transition["from"]];
-        ENFAState to = states[transition["to"]];
+        State from = states[transition["from"]];
+        State to = states[transition["to"]];
 
         string input = transition["input"];
         if(alphabet.find(input) == alphabet.end())
@@ -50,19 +50,19 @@ void DFA::initDFA(const json &dfaDesc) {
 }
 
 // The TF-algorithm
-map<pair<ENFAState,ENFAState>, bool> /*statePairs*/ fillTable (
+map<pair<State,State>, bool> /*statePairs*/ fillTable (
         const set<string>& alphabet,
-        const map<string, ENFAState>& states,
-        const map<pair<ENFAState, string>, ENFAState>& transitionTable
+        const map<string, State>& states,
+        const map<pair<State, string>, State>& transitionTable
                 )
 {
-    map<pair<ENFAState,ENFAState>, bool> statePairs;
+    map<pair<State,State>, bool> statePairs;
 
     // Filling the statePairs map
     for(const auto& p1 : states) {
-        ENFAState s1 = p1.second;
+        State s1 = p1.second;
         for(const auto& p2 : states) {
-            ENFAState s2 = p2.second;
+            State s2 = p2.second;
             if(s1.name < s2.name ) {
                 statePairs[{s2,s1}] = false; // Initially not marked
             }
@@ -86,13 +86,13 @@ map<pair<ENFAState,ENFAState>, bool> /*statePairs*/ fillTable (
 
             //Inductive
             for (const auto &symbol: alphabet) {
-                ENFAState firstNext = transitionTable.at({statePair.first, symbol});
-                ENFAState secondNext = transitionTable.at({statePair.second, symbol});
+                State firstNext = transitionTable.at({statePair.first, symbol});
+                State secondNext = transitionTable.at({statePair.second, symbol});
                 if (firstNext == secondNext) continue;
                 // Our statePairs table requires that the first state of the pair
                 // must come later in the alphabet as the second
                 if (firstNext < secondNext) {
-                    ENFAState temp = secondNext;
+                    State temp = secondNext;
                     secondNext = firstNext;
                     firstNext = temp;
                 }
@@ -125,7 +125,7 @@ DFA::DFA(const nlohmann::json& dfaDesc, int) {
 
 bool DFA::accepts(const std::string& s) const
 {
-    ENFAState currentState = startState;
+    State currentState = startState;
 
     istringstream iss{s};
     for(char c; iss >> c; ) {
@@ -150,7 +150,7 @@ void DFA::print() const
     vector<json> transitionsDesc;
     for(const auto& t : transitionTable) {
         json stateDesc;
-        ENFAState from = t.first.first;
+        State from = t.first.first;
         string fromName = from.name;
         stateDesc["name"] = fromName;
         stateDesc["starting"] = from.starting;
@@ -171,9 +171,9 @@ void DFA::print() const
 }
 
 struct EquiClass {
-    set<ENFAState> equivalents;
-    ENFAState representative;
-    EquiClass(const ENFAState& representative) : representative{representative}, equivalents{representative} {}
+    set<State> equivalents;
+    State representative;
+    EquiClass(const State& representative) : representative{representative}, equivalents{representative} {}
 
     string toString() const {
         stringstream ss;
@@ -201,7 +201,7 @@ struct EquiClass {
     bool operator<(const EquiClass& other) const {return equivalents < other.equivalents;}
 };
 
-EquiClass getEquiClass(const ENFAState& s, const set<EquiClass>& equiClasses)
+EquiClass getEquiClass(const State& s, const set<EquiClass>& equiClasses)
 {
     for(const auto& equiClass : equiClasses) {
         if(find(equiClass.equivalents.begin(), equiClass.equivalents.end(), s) == equiClass.equivalents.end()) continue;
@@ -238,8 +238,8 @@ DFA DFA::minimize() const {
 
     json minimizedTransitions = vector<json>{};
     for(const auto& t : transitionTable) {
-        const ENFAState& from = t.first.first;
-        const ENFAState& to = t.second;
+        const State& from = t.first.first;
+        const State& to = t.second;
         EquiClass fromEquiClass = getEquiClass(from, equivalenceClasses);
         if(from != fromEquiClass.representative) continue;
         json minTransition;
@@ -272,14 +272,14 @@ bool DFA::operator==(const DFA &other) const
 {
     if(alphabet != other.alphabet) return false;
 
-    map<string, ENFAState> unionOfStates{states};
-    map<pair<ENFAState, string>, ENFAState> unionOfTransitions{transitionTable};
+    map<string, State> unionOfStates{states};
+    map<pair<State, string>, State> unionOfTransitions{transitionTable};
     unionOfStates.insert(other.states.begin(), other.states.end());
     unionOfTransitions.insert(other.transitionTable.begin(), other.transitionTable.end());
 
     auto TF_table = fillTable(alphabet, unionOfStates, unionOfTransitions);
-    ENFAState firstStartState = startState;
-    ENFAState secondStartState = other.startState;
+    State firstStartState = startState;
+    State secondStartState = other.startState;
     if(firstStartState < secondStartState) {
         swap(firstStartState, secondStartState);
     }
@@ -289,7 +289,7 @@ bool DFA::operator==(const DFA &other) const
 
 
 
-void printTable(const std::map<std::string, ENFAState>& states, const std::map<std::pair<ENFAState,ENFAState>, bool>& statePairs )
+void printTable(const std::map<std::string, State>& states, const std::map<std::pair<State,State>, bool>& statePairs )
 {
     string prevRowName;
     for(const auto& p : statePairs) {
