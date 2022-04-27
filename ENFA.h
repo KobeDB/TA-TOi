@@ -22,6 +22,7 @@ public:
     void setAccepting(bool newAccepting) { accepting = newAccepting; }
 };
 
+
 class ENFA {
     static const char eps{'~'};
 
@@ -34,12 +35,16 @@ public:
         startState = createState(startIsAccepting);
     }
 
+    ENFA() : startState{}, states{} {}
+
     ENFAState* getStartState() {return startState;}
     std::vector<ENFAState*> getFinalStates();
 
     ENFAState* createState(bool accepting);
 
-    friend ENFA operator+(ENFA&& enfa1, ENFA&& enfa2);
+    friend ENFA add(ENFA&& enfa1, ENFA&& enfa2); // Union
+    friend ENFA concat(ENFA&& enfa1, ENFA&& enfa2); // Concatenation
+    friend ENFA kleenestar(ENFA&& enfa); // Kleene closure
 
 };
 

@@ -23,11 +23,10 @@ ENFAState *ENFA::createState(bool accepting) {
     return newState;
 }
 
-ENFA operator+(ENFA &&enfa1, ENFA &&enfa2)
+ENFA add(ENFA &&enfa1, ENFA &&enfa2)
 {
     ENFA sumEnfa{false};
 
-    // We use ~ for epsilon
     sumEnfa.getStartState()->addTransition(ENFA::eps, enfa1.getStartState());
     sumEnfa.getStartState()->addTransition(ENFA::eps, enfa2.getStartState());
 
@@ -46,11 +45,40 @@ ENFA operator+(ENFA &&enfa1, ENFA &&enfa2)
     enfa1Final->setAccepting(false);
     enfa2Final->setAccepting(false);
 
-    // Finally, move State-ownership from the 2 ENFAs to the new sumEnfa
+    // Finally, move ENFAState-ownership from the 2 ENFAs to the new sumEnfa
     std::move(enfa1.states.begin(), enfa1.states.end(), std::back_inserter(sumEnfa.states));
     std::move(enfa2.states.begin(), enfa2.states.end(), std::back_inserter(sumEnfa.states));
 
     return sumEnfa;
+}
+
+ENFA concat(ENFA &&enfa1, ENFA &&enfa2) {
+    ENFA concatEnfa{};
+    concatEnfa.startState = enfa1.getStartState();
+
+    auto enfa1Finals = enfa1.getFinalStates();
+    if(enfa1Finals.size() != 1) cerr << "ERROR: enfa1 doesnt have exactly one final state!\n";
+    auto enfa1Final = enfa1Finals[0];
+
+    enfa1Final->addTransition(ENFA::eps, enfa2.getStartState());
+    enfa1Final->setAccepting(false);
+
+    // Finally, move ENFAState-ownership from the 2 ENFAs to the new concatEnfa
+    std::move(enfa1.states.begin(), enfa1.states.end(), std::back_inserter(concatEnfa.states));
+    std::move(enfa2.states.begin(), enfa2.states.end(), std::back_inserter(concatEnfa.states));
+
+    return concatEnfa;
+}
+
+ENFA kleenestar(ENFA &&enfa) {
+    ENFA starNFA{false};
+
+    starNFA.getStartState()->addTransition(ENFA::eps, enfa.getStartState());
+
+
+
+
+    return ENFA(false);
 }
 
 void ENFAState::addTransition(char c, ENFAState *to)
