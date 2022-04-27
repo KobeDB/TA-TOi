@@ -27,13 +27,14 @@ public:
 
 
 class ENFA {
-    static const char eps{'~'};
 
     ENFAState* startState;
 
     std::vector<std::unique_ptr<ENFAState>> states;
 
 public:
+    static const char eps{'~'};
+
     explicit ENFA(bool startIsAccepting) : startState{}, states{} {
         startState = createState(startIsAccepting);
     }

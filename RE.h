@@ -11,9 +11,9 @@
 
 class RE {
     std::stringstream ss;
-    char e;
+    char eps;
 public:
-    RE(const std::string& expr, char e) : ss{expr}, e{e} {}
+    RE(const std::string& expr, char e) : ss{expr}, eps{e} {}
 
     ENFA toENFA();
 

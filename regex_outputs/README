@@ -1,0 +1,7 @@
+het cpp-programma produceert een dot_script.sh file die kan opgeroepen worden 
+met de linux-terminal om de eNFAs om te zetten naar svg images
+
+1) navigeer met de terminal naar de folder .../regex_outputs
+2) chmod +x ./dot_script.sh
+3) ./dot_script.sh
+4) enjoy the THICC eNFAs

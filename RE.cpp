@@ -25,7 +25,12 @@ ENFA RE::toENFA()
         default: {
             ENFA enfa{false};
             auto final = enfa.createState(true);
-            enfa.getStartState()->addTransition(ch, final);
+            if(ch == eps) {
+                enfa.getStartState()->addTransition(ENFA::eps, final);
+            }
+            else {
+                enfa.getStartState()->addTransition(ch, final);
+            }
             return enfa;
         }
     }

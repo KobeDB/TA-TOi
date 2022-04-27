@@ -38,14 +38,30 @@ void jsonToDot(ostream& os, json faDesc)
     os << "}";
 }
 
-int main(){
-    RE re{".*+01.10", 'e'};
-    ENFA enfa = re.toENFA();
-    json enfaDesc = enfa.toJson();
-    cout << setw(4) << enfaDesc;
+struct REDesc { string name; string regex; char eps; };
 
-    ofstream ofs{"enfa.dot"};
-    jsonToDot(ofs, enfaDesc);
+int main(){
+
+    vector<REDesc> regexes = {{"regex0", ".*+01.10", 'e'},
+                              {"regex1", "e", 'e'},
+                              {"regex2", "+ea", 'e'},
+                              {"regex3", ".ee", 'e'},
+                              {"vis", "+..vis ......vislijn", 'e'}
+                              };
+
+    ofstream dotCompilationScript{"regex_outputs/dot_script.sh"};
+    for(const auto& reDesc : regexes) {
+        RE re{reDesc.regex, reDesc.eps};
+        ENFA enfa = re.toENFA();
+        json enfaDesc = enfa.toJson();
+        string outFilename = reDesc.regex;
+        ofstream ofs{"regex_outputs/" + reDesc.name};
+        if(!ofs) cerr << "rip\n";
+        jsonToDot(ofs, enfaDesc);
+
+        string compilationScriptFilename = string{"\\\""} + outFilename + string{"\\\""};
+        dotCompilationScript << "dot ./" + reDesc.name + " -Tsvg > ./" << reDesc.name << ".svg \n";
+    }
 
     cout << "Hello there\n";
     return 0;
