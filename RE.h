@@ -10,10 +10,10 @@
 #include "ENFA.h"
 
 class RE {
-    std::stringstream ss;
+    const std::string expr;
     char eps;
 public:
-    RE(const std::string& expr, char e) : ss{expr}, eps{e} {}
+    RE(const std::string& expr, char e);
 
     ENFA toENFA();
 

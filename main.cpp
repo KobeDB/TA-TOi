@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <stack>
 #include "json.hpp"
 
 #include "DFA.h"
@@ -40,14 +41,20 @@ void jsonToDot(ostream& os, json faDesc)
 
 struct REDesc { string name; string regex; char eps; };
 
-int main(){
-
-    vector<REDesc> regexes = {{"regex0", ".*+01.10", 'e'},
+int main()
+{
+    vector<REDesc> regexes = {{"regex0", "(0+1)*10", 'e'},
                               {"regex1", "e", 'e'},
-                              {"regex2", "+ea", 'e'},
-                              {"regex3", ".ee", 'e'},
-                              {"vis", "+..vis ......vislijn", 'e'}
-                              };
+                              {"regex2", "e+a", 'e'},
+                              {"regex3", "ee", 'e'},
+                              {"vis",    "vis+vislijn", 'e'}};
+
+//    vector<REDesc> regexes = {{"regex0", ".*+01.10", 'e'},
+//                              {"regex1", "e", 'e'},
+//                              {"regex2", "+ea", 'e'},
+//                              {"regex3", ".ee", 'e'},
+//                              {"vis", "+..vis ......vislijn", 'e'}
+//                              };
 
     ofstream dotCompilationScript{"regex_outputs/dot_script.sh"};
     for(const auto& reDesc : regexes) {

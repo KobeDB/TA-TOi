@@ -5,7 +5,6 @@
 #ifndef TA_PRAC_2_ENFA_H
 #define TA_PRAC_2_ENFA_H
 
-#include <memory>
 #include <vector>
 #include <map>
 #include <set>
